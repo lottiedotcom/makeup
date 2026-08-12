@@ -17,6 +17,8 @@ const challengeSwatches = document.getElementById('challengeSwatches');
 
 const startQuizBtn = document.getElementById('startQuizBtn');
 const quickRollBtn = document.getElementById('quickRollBtn');
+const challengeMode = document.getElementById('challengeMode'); // The dropdown
+const manualRollBtn = document.getElementById('manualRollBtn'); // The Go button
 const quizModal = document.getElementById('quizModal');
 const quizQuestionText = document.getElementById('quizQuestionText');
 const quizOptionsContainer = document.getElementById('quizOptionsContainer');
@@ -118,7 +120,7 @@ function getHSL(hex) {
     return { h: h, s: +(s * 100).toFixed(1), l: +(l * 100).toFixed(1) };
 }
 
-// --- RENDER PALETTES (NUMBERS INSIDE CIRCLES ONLY) ---
+// --- RENDER PALETTES ---
 function updatePaletteDisplay() {
     paletteDisplayContainer.innerHTML = '';
     palettes.forEach((palette, paletteIndex) => {
@@ -138,10 +140,8 @@ function updatePaletteDisplay() {
             swatch.style.backgroundColor = color;
             swatch.title = "Tap to delete";
             
-            // Insert number directly into the circle
             swatch.innerText = colorIndex + 1;
             
-            // Ensure contrast: Light colors get dark text, dark colors get white text
             const hsl = getHSL(color);
             swatch.style.color = hsl.l > 55 ? '#333' : '#fff';
             
@@ -253,6 +253,7 @@ function getFlatColors() {
     return allColors;
 }
 
+// 1. The Quick Roll
 quickRollBtn.addEventListener('click', () => {
     if (getFlatColors().length < 3) {
         alert("Please extract at least 3 colors into your digital pool first!");
@@ -262,6 +263,17 @@ quickRollBtn.addEventListener('click', () => {
     generateChallenge(randomMode, "any", "");
 });
 
+// 2. The Manual Selection (The Go Button)
+manualRollBtn.addEventListener('click', () => {
+    if (getFlatColors().length < 3) {
+        alert("Please extract at least 3 colors into your digital pool first!");
+        return;
+    }
+    const selectedMode = challengeMode.value;
+    generateChallenge(selectedMode, "any", "");
+});
+
+// 3. The Quiz
 function processQuizResults() {
     let winningMode = 'roulette';
     let maxScore = -1;
@@ -338,15 +350,12 @@ function generateChallenge(mode, vibe, finishText) {
         swatch.classList.add('color-swatch');
         swatch.style.backgroundColor = colorObj.color;
         
-        // Put the original pan number inside the generated swatch!
         swatch.innerText = colorObj.originalNumber;
         
-        // Ensure contrast for the generated swatches too
         const hsl = getHSL(colorObj.color);
         swatch.style.color = hsl.l > 55 ? '#333' : '#fff';
         
         const label = document.createElement('small');
-        // The text underneath is now just the Palette Name
         const sourceText = colorObj.paletteName;
 
         if (mode === 'placement' || mode === 'haloEye' || mode === 'innerCorner') {
@@ -380,3 +389,4 @@ installBtn.addEventListener('click', async () => {
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
 }
+
