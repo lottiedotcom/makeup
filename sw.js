@@ -1,5 +1,5 @@
-// Bumped to v4 to clear the cache!
-const CACHE_NAME = 'makeup-cache-v4'; 
+// Version 5 forces a cache clear for the numbering update!
+const CACHE_NAME = 'makeup-cache-v5'; 
 
 const urlsToCache = [
   './',
@@ -7,10 +7,9 @@ const urlsToCache = [
   './style.css',
   './script.js', 
   './manifest.json',
-  './makeup.png' // Updated to png here!
+  './makeup.png'
 ];
 
-// Install Service Worker and Cache New Files
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -21,7 +20,6 @@ self.addEventListener('install', event => {
   self.skipWaiting(); 
 });
 
-// Activate Event: Clear the Old Cache
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -37,7 +35,6 @@ self.addEventListener('activate', event => {
   self.clients.claim(); 
 });
 
-// Serve Cached Files when Offline
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
