@@ -43,17 +43,12 @@
 
         <section class="bubble-panel">
             <h2>3. Challenge Generator</h2>
-            <select id="challengeMode" class="bubble-select">
-                <option value="roulette">Palette Roulette</option>
-                <option value="haloEye">The Halo Eye</option>
-                <option value="innerCorner">Inner Corner Pop</option>
-                <option value="oneAndDone">The One & Done</option>
-                <option value="panProject">The Pan Project</option>
-                <option value="colorClash">Color Theory Clash</option>
-                <option value="placement">Placement Prompts</option>
-                <option value="vibeCheck">Vibe Check</option>
-            </select>
-            <button id="generateBtn" class="bubble-btn primary">Challenge Me!</button>
+            
+            <!-- Replaced the dropdown with action buttons -->
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button id="quickRollBtn" class="bubble-btn secondary" style="margin-top: 0;">🎲 Quick Roll</button>
+                <button id="startQuizBtn" class="bubble-btn primary" style="margin-top: 0;">✨ Take the Vibe Quiz</button>
+            </div>
             
             <div id="challengeResult" class="result-box hidden">
                 <h3 id="challengeTitle"></h3>
@@ -61,6 +56,16 @@
                 <div id="challengeSwatches" class="palette-grid"></div>
             </div>
         </section>
+    </div>
+
+    <!-- The Vibe Quiz Modal (Hidden by default) -->
+    <div id="quizModal" class="modal-overlay hidden">
+        <div class="bubble-panel quiz-panel">
+            <h2 id="quizQuestionText">Question...</h2>
+            <div id="quizOptionsContainer" class="quiz-options">
+                <!-- Buttons injected by JS -->
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
