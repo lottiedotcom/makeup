@@ -17,11 +17,10 @@ const challengeTitle = document.getElementById('challengeTitle');
 const challengeText = document.getElementById('challengeText');
 const challengeSwatches = document.getElementById('challengeSwatches');
 
-// Array of palette objects: { name: 'Palette 1', colors: ['#hex', '#hex'] }
 let palettes = [];
 let activePaletteIndex = -1;
 
-// Handle Image Upload
+// Image Upload
 imageLoader.addEventListener('change', (e) => {
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -31,19 +30,13 @@ imageLoader.addEventListener('change', (e) => {
             canvas.height = img.height;
             ctx.drawImage(img, 0, 0);
             
-            // Ask user for a palette name
             const defaultName = "Palette " + (palettes.length + 1);
             let paletteName = prompt("Name this palette (e.g., 'Neon Nights'):", defaultName);
             if (!paletteName) paletteName = defaultName;
 
-            // Create new palette object and set as active
-            palettes.push({
-                name: paletteName,
-                colors: []
-            });
+            palettes.push({ name: paletteName, colors: [] });
             activePaletteIndex = palettes.length - 1;
 
-            // Show UI elements
             canvasWrapper.classList.remove('hidden');
             tapInstruction.style.display = 'block';
             clearPaletteBtn.classList.remove('hidden');
@@ -53,75 +46,98 @@ imageLoader.addEventListener('change', (e) => {
         }
         img.src = event.target.result;
     }
-    // Reset value so uploading the same file twice in a row still triggers 'change'
-    if (e.target.files.length > 0) {
-        reader.readAsDataURL(e.target.files[0]);
-    }
+    if (e.target.files.length > 0) reader.readAsDataURL(e.target.files[0]);
     e.target.value = ''; 
 });
 
-// Eyedropper Zoom Logic
-canvas.addEventListener('mousemove', (e) => {
-    magContainer.style.display = 'block';
-    magContainer.style.left = (e.clientX + 15) + 'px';
-    magContainer.style.top = (e.clientY - 40) + 'px';
+// --- DRAG TO PICK LOGIC ---
+let isDragging = false;
+let currentCanvasX = 0;
+let currentCanvasY = 0;
 
+function getCoordinates(e) {
     const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    return {
+        screenX: clientX,
+        screenY: clientY,
+        canvasX: (clientX - rect.left) * scaleX,
+        canvasY: (clientY - rect.top) * scaleY
+    };
+}
+
+function updateMagnifier(coords) {
+    currentCanvasX = coords.canvasX;
+    currentCanvasY = coords.canvasY;
+
+    magContainer.style.display = 'block';
+    // Offset magnifier slightly above the finger so it's not hidden
+    magContainer.style.left = (coords.screenX - 40) + 'px'; 
+    magContainer.style.top = (coords.screenY - 90) + 'px';
 
     magCtx.imageSmoothingEnabled = false; 
     magCtx.clearRect(0, 0, magCanvas.width, magCanvas.height);
     magCtx.drawImage(
         canvas, 
-        x - 10, y - 10, 20, 20, 
+        currentCanvasX - 10, currentCanvasY - 10, 20, 20, 
         0, 0, magCanvas.width, magCanvas.height
     );
-});
+}
 
-canvas.addEventListener('mouseleave', () => magContainer.style.display = 'none');
-window.addEventListener('scroll', () => magContainer.style.display = 'none');
-
-// Tap to Pick Color
-canvas.addEventListener('click', (e) => {
+function startPick(e) {
     if (activePaletteIndex === -1) return;
+    isDragging = true;
+    updateMagnifier(getCoordinates(e));
+}
 
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
-    
-    const pixel = ctx.getImageData(x, y, 1, 1).data;
+function movePick(e) {
+    if (!isDragging) return;
+    e.preventDefault(); // Prevents page scrolling while dragging
+    updateMagnifier(getCoordinates(e));
+}
+
+function endPick(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    magContainer.style.display = 'none';
+
+    // Extract the color right where the user lifted their finger
+    const pixel = ctx.getImageData(currentCanvasX, currentCanvasY, 1, 1).data;
     const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
     
     palettes[activePaletteIndex].colors.push(hex);
     updatePaletteDisplay();
-});
+}
+
+// Mouse Events
+canvas.addEventListener('mousedown', startPick);
+window.addEventListener('mousemove', movePick); // Window catches fast drags outside canvas
+window.addEventListener('mouseup', endPick);
+
+// Touch Events
+canvas.addEventListener('touchstart', startPick, { passive: false });
+window.addEventListener('touchmove', movePick, { passive: false });
+window.addEventListener('touchend', endPick);
 
 function rgbToHex(r, g, b) {
     return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).toUpperCase();
 }
 
-// Render All Palettes in the Pool
+// Render Palettes
 function updatePaletteDisplay() {
     paletteDisplayContainer.innerHTML = '';
-    
     palettes.forEach((palette) => {
-        // Create container for this palette
+        if (palette.colors.length === 0) return;
         const groupDiv = document.createElement('div');
         groupDiv.classList.add('palette-group');
         
-        // Palette Title
         const title = document.createElement('h4');
         title.innerText = palette.name;
         groupDiv.appendChild(title);
 
-        // Grid for swatches
         const gridDiv = document.createElement('div');
         gridDiv.classList.add('palette-grid');
 
@@ -131,13 +147,12 @@ function updatePaletteDisplay() {
             swatch.style.backgroundColor = color;
             gridDiv.appendChild(swatch);
         });
-
         groupDiv.appendChild(gridDiv);
         paletteDisplayContainer.appendChild(groupDiv);
     });
 }
 
-// Clear Everything
+// Clear Pool
 clearPaletteBtn.addEventListener('click', () => {
     palettes = [];
     activePaletteIndex = -1;
@@ -149,14 +164,11 @@ clearPaletteBtn.addEventListener('click', () => {
     document.querySelector('.file-upload-btn').innerText = "Upload a Palette";
 });
 
-// Challenge Generator
+// Generator Logic
 generateBtn.addEventListener('click', () => {
-    // Flatten all colors into an array of objects: { color: '#hex', paletteName: 'Name' }
     let allColors = [];
     palettes.forEach(p => {
-        p.colors.forEach(c => {
-            allColors.push({ color: c, paletteName: p.name });
-        });
+        p.colors.forEach(c => allColors.push({ color: c, paletteName: p.name }));
     });
 
     if (allColors.length < 3) {
@@ -168,10 +180,8 @@ generateBtn.addEventListener('click', () => {
     challengeResult.classList.remove('hidden');
     challengeSwatches.innerHTML = ''; 
 
-    // Helper to get random unique colors
     const getRandomColors = (num) => {
         const shuffled = [...allColors].sort(() => 0.5 - Math.random());
-        // Ensure we only pick as many colors as exist in the pool
         return shuffled.slice(0, Math.min(num, allColors.length));
     };
 
@@ -183,29 +193,36 @@ generateBtn.addEventListener('click', () => {
             challengeText.innerText = "Here is your randomized 4-pan look!";
             selectedColors = getRandomColors(4);
             break;
-            
-        case 'panProject':
-            challengeTitle.innerText = "The Pan Project";
-            challengeText.innerText = "Time to hit pan! Create a full look focusing entirely on these least-used shades.";
+        case 'haloEye':
+            challengeTitle.innerText = "The Halo Eye";
+            challengeText.innerHTML = `Use <b>Color 1</b> for the inner and outer corners.<br>Pop <b>Color 2</b> directly in the center of the lid.<br>Blend the edges seamlessly with <b>Color 3</b>.`;
             selectedColors = getRandomColors(3);
             break;
-            
+        case 'innerCorner':
+            challengeTitle.innerText = "Inner Corner Pop";
+            challengeText.innerHTML = `Create a soft base with <b>Colors 1 & 2</b>.<br>Pack <b>Color 3</b> intensely on the inner corner for a bright pop!`;
+            selectedColors = getRandomColors(3);
+            break;
+        case 'oneAndDone':
+            challengeTitle.innerText = "The One & Done";
+            challengeText.innerText = "Keep it simple! Wash this single color all over the lid and buff it out for a beautiful monochromatic look.";
+            selectedColors = getRandomColors(1);
+            break;
+        case 'panProject':
+            challengeTitle.innerText = "The Pan Project";
+            challengeText.innerText = "Time to hit pan! Create a full look focusing entirely on these shades.";
+            selectedColors = getRandomColors(3);
+            break;
         case 'colorClash':
             challengeTitle.innerText = "Color Theory Clash";
             challengeText.innerText = "Make it work! Create a cohesive look using these contrasting shades.";
             selectedColors = getRandomColors(2);
             break;
-            
         case 'placement':
             challengeTitle.innerText = "Placement Prompts";
+            challengeText.innerHTML = `Use <b>Color 1</b> in the crease.<br>Pack <b>Color 2</b> all over the lid.<br>Smudge <b>Color 3</b> on the lower lash line.`;
             selectedColors = getRandomColors(3);
-            challengeText.innerHTML = `
-                Use <b>Color 1</b> in the crease.<br>
-                Pack <b>Color 2</b> all over the lid.<br>
-                Smudge <b>Color 3</b> on the lower lash line.
-            `;
             break;
-            
         case 'vibeCheck':
             const vibes = ["Grunge", "Ethereal", "Everyday Soft", "Night Out"];
             const randomVibe = vibes[Math.floor(Math.random() * vibes.length)];
@@ -215,7 +232,6 @@ generateBtn.addEventListener('click', () => {
             break;
     }
 
-    // Display generated colors with their parent palette name
     selectedColors.forEach((colorObj, index) => {
         const swatchWrap = document.createElement('div');
         swatchWrap.classList.add('swatch-wrapper');
@@ -225,7 +241,7 @@ generateBtn.addEventListener('click', () => {
         swatch.style.backgroundColor = colorObj.color;
         
         const label = document.createElement('small');
-        if (mode === 'placement') {
+        if (mode === 'placement' || mode === 'haloEye' || mode === 'innerCorner') {
             label.innerHTML = `<b>Color ${index + 1}</b><br>${colorObj.paletteName}`;
         } else {
             label.innerText = colorObj.paletteName;
@@ -237,7 +253,29 @@ generateBtn.addEventListener('click', () => {
     });
 });
 
-// PWA Service Worker
+// PWA Service Worker & Install Logic
+let deferredPrompt;
+const installBtn = document.getElementById('installBtn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent default mini-infobar
+    e.preventDefault();
+    deferredPrompt = e;
+    // Update UI notify the user they can install the PWA
+    installBtn.classList.remove('hidden');
+});
+
+installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            installBtn.classList.add('hidden');
+        }
+        deferredPrompt = null;
+    }
+});
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js');
