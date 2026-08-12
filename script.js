@@ -118,7 +118,7 @@ function getHSL(hex) {
     return { h: h, s: +(s * 100).toFixed(1), l: +(l * 100).toFixed(1) };
 }
 
-// --- RENDER PALETTES (WITH NUMBERS INSIDE CIRCLES) ---
+// --- RENDER PALETTES (NUMBERS INSIDE CIRCLES ONLY) ---
 function updatePaletteDisplay() {
     paletteDisplayContainer.innerHTML = '';
     palettes.forEach((palette, paletteIndex) => {
@@ -129,7 +129,6 @@ function updatePaletteDisplay() {
         title.innerText = palette.name;
         groupDiv.appendChild(title);
         
-        // This restores the tight layout!
         const gridDiv = document.createElement('div');
         gridDiv.classList.add('palette-grid');
 
@@ -381,4 +380,3 @@ installBtn.addEventListener('click', async () => {
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
 }
-
