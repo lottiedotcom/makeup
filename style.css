@@ -89,7 +89,7 @@ canvas#imageCanvas {
     width: 100%;
     height: auto;
     cursor: crosshair;
-    touch-action: none; /* Forces the browser to handle pointer events cleanly */
+    touch-action: none;
 }
 
 .hidden-input {
@@ -131,6 +131,13 @@ canvas#imageCanvas {
     border-radius: 50%;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     border: 2px solid white;
+    
+    /* Centers the text inside the circle */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    font-weight: bold;
 }
 
 /* Delete Swatch Effects */
@@ -191,7 +198,6 @@ canvas#imageCanvas {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 80px;
     text-align: center;
 }
 
@@ -200,6 +206,7 @@ canvas#imageCanvas {
     font-size: 0.8em;
     color: #666;
     line-height: 1.2;
+    word-wrap: break-word;
 }
 
 .hidden {
@@ -218,7 +225,7 @@ canvas#imageCanvas {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(74, 63, 94, 0.6); /* Soft dark purple dim */
+    background: rgba(74, 63, 94, 0.6); 
     backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
@@ -268,16 +275,5 @@ canvas#imageCanvas {
 @keyframes popIn {
     0% { transform: scale(0.8); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
-}
-
-/* Add this to the bottom of your style.css */
-.context-crop {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px; /* Slightly square to look like a pan */
-    margin-top: 8px;
-    border: 2px solid white;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    object-fit: cover;
 }
 
