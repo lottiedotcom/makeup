@@ -15,7 +15,6 @@ const challengeTitle = document.getElementById('challengeTitle');
 const challengeText = document.getElementById('challengeText');
 const challengeSwatches = document.getElementById('challengeSwatches');
 
-// Quiz Elements
 const startQuizBtn = document.getElementById('startQuizBtn');
 const quickRollBtn = document.getElementById('quickRollBtn');
 const quizModal = document.getElementById('quizModal');
@@ -94,25 +93,8 @@ function endPick(e) {
     if (!isDragging) return;
     isDragging = false;
     magContainer.style.display = 'none';
-    
-    // 1. Get the Hex Color
     const pixel = ctx.getImageData(currentCanvasX, currentCanvasY, 1, 1).data;
-    const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
-
-    // 2. Create the Context Crop Snapshot (60x60 area around the tap)
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = 60;
-    tempCanvas.height = 60;
-    const tempCtx = tempCanvas.getContext('2d');
-    tempCtx.drawImage(
-        canvas, 
-        currentCanvasX - 30, currentCanvasY - 30, 60, 60, 
-        0, 0, 60, 60
-    );
-    const cropDataUrl = tempCanvas.toDataURL('image/jpeg', 0.8);
-
-    // Save both the color and the tiny photo!
-    palettes[activePaletteIndex].colors.push({ hex: hex, crop: cropDataUrl });
+    palettes[activePaletteIndex].colors.push(rgbToHex(pixel[0], pixel[1], pixel[2]));
     updatePaletteDisplay();
 }
 function cancelPick() { isDragging = false; magContainer.style.display = 'none'; }
@@ -136,7 +118,7 @@ function getHSL(hex) {
     return { h: h, s: +(s * 100).toFixed(1), l: +(l * 100).toFixed(1) };
 }
 
-// --- RENDER PALETTES ---
+// --- RENDER PALETTES (WITH NUMBERS) ---
 function updatePaletteDisplay() {
     paletteDisplayContainer.innerHTML = '';
     palettes.forEach((palette, paletteIndex) => {
@@ -149,16 +131,26 @@ function updatePaletteDisplay() {
         const gridDiv = document.createElement('div');
         gridDiv.classList.add('palette-grid');
 
-        palette.colors.forEach((colorObj, colorIndex) => {
+        palette.colors.forEach((color, colorIndex) => {
+            // Use swatch-wrapper so we can display the number underneath
+            const swatchWrap = document.createElement('div');
+            swatchWrap.classList.add('swatch-wrapper');
+
             const swatch = document.createElement('div');
             swatch.classList.add('color-swatch', 'deletable-swatch'); 
-            swatch.style.backgroundColor = colorObj.hex; // Use hex from object
+            swatch.style.backgroundColor = color;
             swatch.title = "Tap to delete";
             swatch.addEventListener('click', () => {
                 palettes[paletteIndex].colors.splice(colorIndex, 1);
                 updatePaletteDisplay(); 
             });
-            gridDiv.appendChild(swatch);
+
+            const label = document.createElement('small');
+            label.innerText = `#${colorIndex + 1}`; // Display pan number
+
+            swatchWrap.appendChild(swatch);
+            swatchWrap.appendChild(label);
+            gridDiv.appendChild(swatchWrap);
         });
         groupDiv.appendChild(gridDiv);
         paletteDisplayContainer.appendChild(groupDiv);
@@ -209,12 +201,6 @@ let quizScores = { roulette: 0, haloEye: 0, innerCorner: 0, oneAndDone: 0, panPr
 let chosenVibe = "any";
 let chosenFinish = "";
 
-function getFlatColors() {
-    let allColors = [];
-    palettes.forEach(p => p.colors.forEach(c => allColors.push({ hex: c.hex, crop: c.crop, paletteName: p.name })));
-    return allColors;
-}
-
 startQuizBtn.addEventListener('click', () => {
     if (getFlatColors().length < 3) {
         alert("Please extract at least 3 colors into your digital pool first!");
@@ -245,9 +231,7 @@ function renderQuestion() {
 
 function handleOptionClick(option) {
     if (option.weight) {
-        for (const [mode, points] of Object.entries(option.weight)) {
-            quizScores[mode] += points;
-        }
+        for (const [mode, points] of Object.entries(option.weight)) quizScores[mode] += points;
     }
     if (option.vibe) chosenVibe = option.vibe;
     if (option.finish) chosenFinish = option.finish;
@@ -263,6 +247,13 @@ function handleOptionClick(option) {
 }
 
 // --- GENERATOR LOGIC ---
+function getFlatColors() {
+    let allColors = [];
+    // Now captures the exact original index (color number) of the pan
+    palettes.forEach(p => p.colors.forEach((c, index) => allColors.push({ color: c, paletteName: p.name, originalNumber: index + 1 })));
+    return allColors;
+}
+
 quickRollBtn.addEventListener('click', () => {
     if (getFlatColors().length < 3) {
         alert("Please extract at least 3 colors into your digital pool first!");
@@ -276,29 +267,20 @@ function processQuizResults() {
     let winningMode = 'roulette';
     let maxScore = -1;
     for (const [mode, score] of Object.entries(quizScores)) {
-        if (score > maxScore) {
-            maxScore = score;
-            winningMode = mode;
-        }
+        if (score > maxScore) { maxScore = score; winningMode = mode; }
     }
     generateChallenge(winningMode, chosenVibe, chosenFinish);
 }
 
 function generateChallenge(mode, vibe, finishText) {
     let allColors = getFlatColors();
-    
     let filteredColors = [...allColors];
-    if (vibe === 'dark') {
-        filteredColors = allColors.filter(c => getHSL(c.hex).l < 45); 
-    } else if (vibe === 'soft') {
-        filteredColors = allColors.filter(c => getHSL(c.hex).l > 60); 
-    } else if (vibe === 'bold') {
-        filteredColors = allColors.filter(c => getHSL(c.hex).s > 50); 
-    }
+    
+    if (vibe === 'dark') filteredColors = allColors.filter(c => getHSL(c.color).l < 45); 
+    else if (vibe === 'soft') filteredColors = allColors.filter(c => getHSL(c.color).l > 60); 
+    else if (vibe === 'bold') filteredColors = allColors.filter(c => getHSL(c.color).s > 50); 
 
-    if (filteredColors.length < 3) {
-        filteredColors = [...allColors];
-    }
+    if (filteredColors.length < 3) filteredColors = [...allColors];
 
     const getRandomColors = (num) => {
         const shuffled = [...filteredColors].sort(() => 0.5 - Math.random());
@@ -309,6 +291,7 @@ function generateChallenge(mode, vibe, finishText) {
     challengeSwatches.innerHTML = ''; 
     let selectedColors = [];
 
+    // Text changed from "Color 1" to "Shade 1" to avoid confusion with physical Pan #1
     switch (mode) {
         case 'roulette':
             challengeTitle.innerText = "Palette Roulette";
@@ -317,12 +300,12 @@ function generateChallenge(mode, vibe, finishText) {
             break;
         case 'haloEye':
             challengeTitle.innerText = "The Halo Eye";
-            challengeText.innerHTML = `Use <b>Color 1</b> for inner/outer corners.<br>Pop <b>Color 2</b> in the center of the lid.<br>Blend the edges with <b>Color 3</b>.`;
+            challengeText.innerHTML = `Use <b>Shade 1</b> for inner/outer corners.<br>Pop <b>Shade 2</b> in the center of the lid.<br>Blend the edges with <b>Shade 3</b>.`;
             selectedColors = getRandomColors(3);
             break;
         case 'innerCorner':
             challengeTitle.innerText = "Inner Corner Pop";
-            challengeText.innerHTML = `Create a soft base with <b>Colors 1 & 2</b>.<br>Pack <b>Color 3</b> intensely on the inner corner!`;
+            challengeText.innerHTML = `Create a soft base with <b>Shades 1 & 2</b>.<br>Pack <b>Shade 3</b> intensely on the inner corner!`;
             selectedColors = getRandomColors(3);
             break;
         case 'oneAndDone':
@@ -342,40 +325,32 @@ function generateChallenge(mode, vibe, finishText) {
             break;
         case 'placement':
             challengeTitle.innerText = "Placement Prompts";
-            challengeText.innerHTML = `Use <b>Color 1</b> in the crease.<br>Pack <b>Color 2</b> all over the lid.<br>Smudge <b>Color 3</b> on the lower lash line.`;
+            challengeText.innerHTML = `Use <b>Shade 1</b> in the crease.<br>Pack <b>Shade 2</b> all over the lid.<br>Smudge <b>Shade 3</b> on the lower lash line.`;
             selectedColors = getRandomColors(3);
             break;
     }
 
-    if (finishText) {
-        challengeText.innerHTML += `<br><br><b>Finishing Touch:</b> <i>${finishText}</i>`;
-    }
+    if (finishText) challengeText.innerHTML += `<br><br><b>Finishing Touch:</b> <i>${finishText}</i>`;
 
     selectedColors.forEach((colorObj, index) => {
         const swatchWrap = document.createElement('div');
         swatchWrap.classList.add('swatch-wrapper');
         
-        // Solid Color Circle
         const swatch = document.createElement('div');
         swatch.classList.add('color-swatch');
-        swatch.style.backgroundColor = colorObj.hex;
-
-        // Context Crop Image
-        const contextImg = document.createElement('img');
-        contextImg.src = colorObj.crop;
-        contextImg.classList.add('context-crop');
-        contextImg.title = "Sourced from this area of the palette";
+        swatch.style.backgroundColor = colorObj.color;
         
-        // Text Label
         const label = document.createElement('small');
+        // Now outputs "Palette Name (#Number)"
+        const sourceText = `${colorObj.paletteName} (#${colorObj.originalNumber})`;
+
         if (mode === 'placement' || mode === 'haloEye' || mode === 'innerCorner') {
-            label.innerHTML = `<b>Color ${index + 1}</b><br>${colorObj.paletteName}`;
+            label.innerHTML = `<b>Shade ${index + 1}</b><br>${sourceText}`;
         } else {
-            label.innerText = colorObj.paletteName;
+            label.innerText = sourceText;
         }
         
         swatchWrap.appendChild(swatch);
-        swatchWrap.appendChild(contextImg); // Inject the mini photo!
         swatchWrap.appendChild(label);
         challengeSwatches.appendChild(swatchWrap);
     });
