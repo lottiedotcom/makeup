@@ -1,11 +1,11 @@
-// Change this version number whenever you update files to force a cache clear!
-const CACHE_NAME = 'makeup-cache-v2'; 
+// Version 3 forces a cache clear!
+const CACHE_NAME = 'makeup-cache-v3'; 
 
 const urlsToCache = [
   './',
   './index.html',
   './style.css',
-  './script.js', // Match your JS file name here
+  './script.js', 
   './manifest.json',
   './makeup.jpg'
 ];
@@ -18,7 +18,6 @@ self.addEventListener('install', event => {
         return cache.addAll(urlsToCache);
       })
   );
-  // Force the waiting service worker to become the active service worker.
   self.skipWaiting(); 
 });
 
@@ -28,7 +27,6 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          // If the cache name doesn't match the current version, delete it
           if (cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
@@ -36,7 +34,6 @@ self.addEventListener('activate', event => {
       );
     })
   );
-  // Ensure the service worker takes control of the page immediately
   self.clients.claim(); 
 });
 
@@ -46,9 +43,9 @@ self.addEventListener('fetch', event => {
     caches.match(event.request)
       .then(response => {
         if (response) {
-          return response; // Return cached file
+          return response; 
         }
-        return fetch(event.request); // Fetch from network
+        return fetch(event.request); 
       })
   );
 });
