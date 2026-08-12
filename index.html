@@ -23,7 +23,7 @@
 
         <section class="bubble-panel">
             <h2>1. Upload Palettes</h2>
-            <p class="instruction">Upload as many palettes as you want to build your color pool!</p>
+            <p class="instruction">Upload as many palettes as you want. You'll be asked to name each one!</p>
             
             <label for="imageLoader" class="bubble-btn secondary file-upload-btn">Upload a Palette</label>
             <input type="file" id="imageLoader" accept="image/*" class="hidden-input">
@@ -31,13 +31,13 @@
             <div class="canvas-container hidden" id="canvasWrapper">
                 <canvas id="imageCanvas"></canvas>
             </div>
-            <p class="instruction" id="tapInstruction" style="display:none;">Hover to zoom, tap to extract colors!</p>
+            <p class="instruction" id="tapInstruction" style="display:none;">Hover to zoom, tap to extract colors into your active palette!</p>
         </section>
 
         <section class="bubble-panel">
             <h2>2. Digital Color Pool</h2>
-            <div id="paletteDisplay" class="palette-grid"></div>
-            <button id="clearPaletteBtn" class="bubble-btn secondary">Clear All Colors</button>
+            <div id="paletteDisplayContainer"></div>
+            <button id="clearPaletteBtn" class="bubble-btn secondary hidden" style="margin-top: 15px;">Clear All Palettes</button>
         </section>
 
         <section class="bubble-panel">
