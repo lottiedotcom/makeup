@@ -25,7 +25,7 @@ const quizOptionsContainer = document.getElementById('quizOptionsContainer');
 let palettes = [];
 let activePaletteIndex = -1;
 
-// --- IMAGE UPLOAD & CANVAS (Unchanged) ---
+// --- IMAGE UPLOAD & CANVAS ---
 imageLoader.addEventListener('change', (e) => {
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -55,7 +55,7 @@ imageLoader.addEventListener('change', (e) => {
     e.target.value = ''; 
 });
 
-// --- DRAG TO PICK LOGIC (Unchanged) ---
+// --- DRAG TO PICK LOGIC ---
 let isDragging = false;
 let currentCanvasX = 0, currentCanvasY = 0;
 
@@ -94,8 +94,25 @@ function endPick(e) {
     if (!isDragging) return;
     isDragging = false;
     magContainer.style.display = 'none';
+    
+    // 1. Get the Hex Color
     const pixel = ctx.getImageData(currentCanvasX, currentCanvasY, 1, 1).data;
-    palettes[activePaletteIndex].colors.push(rgbToHex(pixel[0], pixel[1], pixel[2]));
+    const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
+
+    // 2. Create the Context Crop Snapshot (60x60 area around the tap)
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = 60;
+    tempCanvas.height = 60;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(
+        canvas, 
+        currentCanvasX - 30, currentCanvasY - 30, 60, 60, 
+        0, 0, 60, 60
+    );
+    const cropDataUrl = tempCanvas.toDataURL('image/jpeg', 0.8);
+
+    // Save both the color and the tiny photo!
+    palettes[activePaletteIndex].colors.push({ hex: hex, crop: cropDataUrl });
     updatePaletteDisplay();
 }
 function cancelPick() { isDragging = false; magContainer.style.display = 'none'; }
@@ -109,20 +126,17 @@ function rgbToHex(r, g, b) {
     return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).toUpperCase();
 }
 
-// --- COLOR MATH (Converts Hex to HSL for intelligent filtering) ---
 function getHSL(hex) {
     let r = parseInt(hex.slice(1, 3), 16) / 255;
     let g = parseInt(hex.slice(3, 5), 16) / 255;
     let b = parseInt(hex.slice(5, 7), 16) / 255;
     let cmin = Math.min(r,g,b), cmax = Math.max(r,g,b), delta = cmax - cmin;
     let h = 0, s = 0, l = (cmax + cmin) / 2;
-    if (delta !== 0) {
-        s = delta / (1 - Math.abs(2 * l - 1));
-    }
+    if (delta !== 0) s = delta / (1 - Math.abs(2 * l - 1));
     return { h: h, s: +(s * 100).toFixed(1), l: +(l * 100).toFixed(1) };
 }
 
-// --- RENDER PALETTES (Unchanged) ---
+// --- RENDER PALETTES ---
 function updatePaletteDisplay() {
     paletteDisplayContainer.innerHTML = '';
     palettes.forEach((palette, paletteIndex) => {
@@ -135,10 +149,10 @@ function updatePaletteDisplay() {
         const gridDiv = document.createElement('div');
         gridDiv.classList.add('palette-grid');
 
-        palette.colors.forEach((color, colorIndex) => {
+        palette.colors.forEach((colorObj, colorIndex) => {
             const swatch = document.createElement('div');
             swatch.classList.add('color-swatch', 'deletable-swatch'); 
-            swatch.style.backgroundColor = color;
+            swatch.style.backgroundColor = colorObj.hex; // Use hex from object
             swatch.title = "Tap to delete";
             swatch.addEventListener('click', () => {
                 palettes[paletteIndex].colors.splice(colorIndex, 1);
@@ -195,12 +209,17 @@ let quizScores = { roulette: 0, haloEye: 0, innerCorner: 0, oneAndDone: 0, panPr
 let chosenVibe = "any";
 let chosenFinish = "";
 
+function getFlatColors() {
+    let allColors = [];
+    palettes.forEach(p => p.colors.forEach(c => allColors.push({ hex: c.hex, crop: c.crop, paletteName: p.name })));
+    return allColors;
+}
+
 startQuizBtn.addEventListener('click', () => {
     if (getFlatColors().length < 3) {
         alert("Please extract at least 3 colors into your digital pool first!");
         return;
     }
-    // Reset Quiz State
     currentQuestion = 0;
     Object.keys(quizScores).forEach(k => quizScores[k] = 0);
     chosenVibe = "any";
@@ -225,13 +244,11 @@ function renderQuestion() {
 }
 
 function handleOptionClick(option) {
-    // Add points
     if (option.weight) {
         for (const [mode, points] of Object.entries(option.weight)) {
             quizScores[mode] += points;
         }
     }
-    // Save modifiers
     if (option.vibe) chosenVibe = option.vibe;
     if (option.finish) chosenFinish = option.finish;
 
@@ -246,24 +263,16 @@ function handleOptionClick(option) {
 }
 
 // --- GENERATOR LOGIC ---
-function getFlatColors() {
-    let allColors = [];
-    palettes.forEach(p => p.colors.forEach(c => allColors.push({ color: c, paletteName: p.name })));
-    return allColors;
-}
-
 quickRollBtn.addEventListener('click', () => {
     if (getFlatColors().length < 3) {
         alert("Please extract at least 3 colors into your digital pool first!");
         return;
     }
-    // Completely random mode
     const randomMode = allModes[Math.floor(Math.random() * allModes.length)];
     generateChallenge(randomMode, "any", "");
 });
 
 function processQuizResults() {
-    // Find the mode with the highest score
     let winningMode = 'roulette';
     let maxScore = -1;
     for (const [mode, score] of Object.entries(quizScores)) {
@@ -278,18 +287,15 @@ function processQuizResults() {
 function generateChallenge(mode, vibe, finishText) {
     let allColors = getFlatColors();
     
-    // Filter colors based on vibe choice
     let filteredColors = [...allColors];
     if (vibe === 'dark') {
-        filteredColors = allColors.filter(c => getHSL(c.color).l < 45); // Low lightness
+        filteredColors = allColors.filter(c => getHSL(c.hex).l < 45); 
     } else if (vibe === 'soft') {
-        filteredColors = allColors.filter(c => getHSL(c.color).l > 60); // High lightness
+        filteredColors = allColors.filter(c => getHSL(c.hex).l > 60); 
     } else if (vibe === 'bold') {
-        filteredColors = allColors.filter(c => getHSL(c.color).s > 50); // High saturation
+        filteredColors = allColors.filter(c => getHSL(c.hex).s > 50); 
     }
 
-    // Fallback: If filtering leaves us with too few colors, use the whole pool 
-    // and rely on the text prompt to guide the user.
     if (filteredColors.length < 3) {
         filteredColors = [...allColors];
     }
@@ -341,20 +347,26 @@ function generateChallenge(mode, vibe, finishText) {
             break;
     }
 
-    // Append Finishing Touch if quiz was taken
     if (finishText) {
         challengeText.innerHTML += `<br><br><b>Finishing Touch:</b> <i>${finishText}</i>`;
     }
 
-    // Render Swatches
     selectedColors.forEach((colorObj, index) => {
         const swatchWrap = document.createElement('div');
         swatchWrap.classList.add('swatch-wrapper');
         
+        // Solid Color Circle
         const swatch = document.createElement('div');
         swatch.classList.add('color-swatch');
-        swatch.style.backgroundColor = colorObj.color;
+        swatch.style.backgroundColor = colorObj.hex;
+
+        // Context Crop Image
+        const contextImg = document.createElement('img');
+        contextImg.src = colorObj.crop;
+        contextImg.classList.add('context-crop');
+        contextImg.title = "Sourced from this area of the palette";
         
+        // Text Label
         const label = document.createElement('small');
         if (mode === 'placement' || mode === 'haloEye' || mode === 'innerCorner') {
             label.innerHTML = `<b>Color ${index + 1}</b><br>${colorObj.paletteName}`;
@@ -363,12 +375,13 @@ function generateChallenge(mode, vibe, finishText) {
         }
         
         swatchWrap.appendChild(swatch);
+        swatchWrap.appendChild(contextImg); // Inject the mini photo!
         swatchWrap.appendChild(label);
         challengeSwatches.appendChild(swatchWrap);
     });
 }
 
-// --- PWA INSTALL (Unchanged) ---
+// --- PWA INSTALL ---
 let deferredPrompt;
 const installBtn = document.getElementById('installBtn');
 window.addEventListener('beforeinstallprompt', (e) => {
