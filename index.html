@@ -16,25 +16,30 @@
         </header>
 
         <section class="bubble-panel">
-            <h2>1. Upload Palette</h2>
+            <h2>1. Extract Colors</h2>
+            <input type="text" id="paletteName" class="bubble-input" placeholder="Name this palette (e.g., Neon Nights)">
             <input type="file" id="imageLoader" accept="image/*" class="file-input">
-            <div class="canvas-container">
+            
+            <div class="canvas-container" id="canvasWrapper">
                 <canvas id="imageCanvas"></canvas>
+                <canvas id="magnifier" width="80" height="80"></canvas>
             </div>
-            <p class="instruction">Tap the image to extract colors!</p>
+            <p class="instruction">Press and drag on the image to magnify and pick colors!</p>
+            
+            <div id="currentExtractionGrid" class="palette-grid"></div>
+            <button id="savePaletteBtn" class="bubble-btn primary">Save Palette to Library</button>
         </section>
 
         <section class="bubble-panel">
-            <h2>2. Digital Palette</h2>
-            <div id="paletteDisplay" class="palette-grid"></div>
-            <button id="clearPaletteBtn" class="bubble-btn secondary">Clear Palette</button>
+            <h2>2. My Digital Library</h2>
+            <div id="libraryDisplay"></div>
+            <button id="clearLibraryBtn" class="bubble-btn secondary">Clear Entire Library</button>
         </section>
 
         <section class="bubble-panel">
             <h2>3. Challenge Generator</h2>
             <select id="challengeMode" class="bubble-select">
                 <option value="roulette">Palette Roulette</option>
-                <option value="panProject">The Pan Project</option>
                 <option value="colorClash">Color Theory Clash</option>
                 <option value="placement">Placement Prompts</option>
                 <option value="vibeCheck">Vibe Check</option>
