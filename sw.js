@@ -1,5 +1,5 @@
-// Version 5 forces a cache clear for the numbering update!
-const CACHE_NAME = 'makeup-cache-v5'; 
+// Bumped to v6 to force cache clear!
+const CACHE_NAME = 'makeup-cache-v6'; 
 
 const urlsToCache = [
   './',
