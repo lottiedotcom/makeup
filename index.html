@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>makeup</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d8cce6">
+</head>
+<body>
+    <div class="app-container">
+        <header class="bubble-panel">
+            <h1>makeup</h1>
+            <p>Your digital palette & challenge generator</p>
+        </header>
+
+        <section class="bubble-panel">
+            <h2>1. Upload Palette</h2>
+            <input type="file" id="imageLoader" accept="image/*" class="file-input">
+            <div class="canvas-container">
+                <canvas id="imageCanvas"></canvas>
+            </div>
+            <p class="instruction">Tap the image to extract colors!</p>
+        </section>
+
+        <section class="bubble-panel">
+            <h2>2. Digital Palette</h2>
+            <div id="paletteDisplay" class="palette-grid"></div>
+            <button id="clearPaletteBtn" class="bubble-btn secondary">Clear Palette</button>
+        </section>
+
+        <section class="bubble-panel">
+            <h2>3. Challenge Generator</h2>
+            <select id="challengeMode" class="bubble-select">
+                <option value="roulette">Palette Roulette</option>
+                <option value="panProject">The Pan Project</option>
+                <option value="colorClash">Color Theory Clash</option>
+                <option value="placement">Placement Prompts</option>
+                <option value="vibeCheck">Vibe Check</option>
+            </select>
+            <button id="generateBtn" class="bubble-btn primary">Challenge Me!</button>
+            
+            <div id="challengeResult" class="result-box hidden">
+                <h3 id="challengeTitle"></h3>
+                <p id="challengeText"></p>
+                <div id="challengeSwatches" class="palette-grid"></div>
+            </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
