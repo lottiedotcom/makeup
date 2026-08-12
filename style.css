@@ -269,3 +269,15 @@ canvas#imageCanvas {
     0% { transform: scale(0.8); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
 }
+
+/* Add this to the bottom of your style.css */
+.context-crop {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px; /* Slightly square to look like a pan */
+    margin-top: 8px;
+    border: 2px solid white;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    object-fit: cover;
+}
+
