@@ -1,6 +1,6 @@
 :root {
-    --bg-color: #f2f5ff; /* Light pastel blue background */
-    --panel-bg: #e6ddf5; /* Light pastel purple */
+    --bg-color: #f2f5ff;
+    --panel-bg: #e6ddf5;
     --text-color: #4a3f5e;
     --primary-btn: #b3a1d4;
     --primary-btn-hover: #9c89c4;
@@ -34,14 +34,26 @@ body {
     text-align: center;
 }
 
-h1, h2, h3 {
+h1, h2, h3, h4 {
     margin-top: 0;
     color: #5d4e75;
 }
 
+.bubble-input {
+    width: 80%;
+    padding: 12px;
+    border: none;
+    border-radius: 20px;
+    margin-bottom: 15px;
+    font-size: 16px;
+    text-align: center;
+    color: var(--text-color);
+}
+
 .canvas-container {
+    position: relative; /* Crucial for magnifier positioning */
     width: 100%;
-    max-height: 300px;
+    max-height: 400px; /* Increased max height slightly */
     overflow: hidden;
     border-radius: 20px;
     margin: 15px 0;
@@ -49,10 +61,24 @@ h1, h2, h3 {
     box-shadow: inset 0 4px 10px rgba(0,0,0,0.05);
 }
 
-canvas {
+canvas#imageCanvas {
     width: 100%;
     height: auto;
     cursor: crosshair;
+    display: block;
+    touch-action: none; /* Prevents page scrolling while dragging to pick color */
+}
+
+/* The Magnifying Glass */
+#magnifier {
+    position: absolute;
+    border: 4px solid white;
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    pointer-events: none; /* Allows clicking through it */
+    display: none; /* Hidden until drag starts */
+    transform: translate(-50%, -50%);
+    z-index: 10;
 }
 
 .file-input {
@@ -69,14 +95,22 @@ canvas {
     gap: 10px;
     justify-content: center;
     margin-top: 15px;
+    margin-bottom: 15px;
 }
 
 .color-swatch {
     width: 40px;
     height: 40px;
-    border-radius: 50%; /* Bubble style swatches */
+    border-radius: 50%;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     border: 2px solid white;
+}
+
+.saved-palette-group {
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 20px;
+    padding: 15px;
+    margin-bottom: 15px;
 }
 
 .bubble-btn, .bubble-select {
@@ -123,4 +157,3 @@ canvas {
     font-size: 0.9em;
     opacity: 0.8;
 }
-
