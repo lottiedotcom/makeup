@@ -1,5 +1,4 @@
-// Bumped to v6 to force cache clear!
-const CACHE_NAME = 'makeup-cache-v6'; 
+const CACHE_NAME = 'makeup-cache-v7'; 
 
 const urlsToCache = [
   './',
