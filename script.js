@@ -50,17 +50,19 @@ imageLoader.addEventListener('change', (e) => {
     e.target.value = ''; 
 });
 
-// --- DRAG TO PICK LOGIC ---
+// --- DRAG TO PICK LOGIC (UPDATED WITH POINTER EVENTS) ---
 let isDragging = false;
 let currentCanvasX = 0;
 let currentCanvasY = 0;
 
 function getCoordinates(e) {
     const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    // Pointer events have clientX/Y natively, no need to check for touches array
+    const clientX = e.clientX;
+    const clientY = e.clientY;
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
+    
     return {
         screenX: clientX,
         screenY: clientY,
@@ -110,13 +112,16 @@ function endPick(e) {
     updatePaletteDisplay();
 }
 
-canvas.addEventListener('mousedown', startPick);
-window.addEventListener('mousemove', movePick); 
-window.addEventListener('mouseup', endPick);
+function cancelPick() {
+    isDragging = false;
+    magContainer.style.display = 'none';
+}
 
-canvas.addEventListener('touchstart', startPick, { passive: false });
-window.addEventListener('touchmove', movePick, { passive: false });
-window.addEventListener('touchend', endPick);
+// Unified Pointer Events - fixes the "ghost double click" bug entirely
+canvas.addEventListener('pointerdown', startPick);
+window.addEventListener('pointermove', movePick, { passive: false }); 
+window.addEventListener('pointerup', endPick);
+window.addEventListener('pointercancel', cancelPick); // Handles interruptions (like phone calls) smoothly
 
 function rgbToHex(r, g, b) {
     return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).toUpperCase();
@@ -285,3 +290,4 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js');
     });
 }
+
