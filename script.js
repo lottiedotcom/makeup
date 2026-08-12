@@ -74,7 +74,6 @@ function updateMagnifier(coords) {
     currentCanvasY = coords.canvasY;
 
     magContainer.style.display = 'block';
-    // Offset magnifier slightly above the finger so it's not hidden
     magContainer.style.left = (coords.screenX - 40) + 'px'; 
     magContainer.style.top = (coords.screenY - 90) + 'px';
 
@@ -95,7 +94,7 @@ function startPick(e) {
 
 function movePick(e) {
     if (!isDragging) return;
-    e.preventDefault(); // Prevents page scrolling while dragging
+    e.preventDefault(); 
     updateMagnifier(getCoordinates(e));
 }
 
@@ -104,7 +103,6 @@ function endPick(e) {
     isDragging = false;
     magContainer.style.display = 'none';
 
-    // Extract the color right where the user lifted their finger
     const pixel = ctx.getImageData(currentCanvasX, currentCanvasY, 1, 1).data;
     const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
     
@@ -112,12 +110,10 @@ function endPick(e) {
     updatePaletteDisplay();
 }
 
-// Mouse Events
 canvas.addEventListener('mousedown', startPick);
-window.addEventListener('mousemove', movePick); // Window catches fast drags outside canvas
+window.addEventListener('mousemove', movePick); 
 window.addEventListener('mouseup', endPick);
 
-// Touch Events
 canvas.addEventListener('touchstart', startPick, { passive: false });
 window.addEventListener('touchmove', movePick, { passive: false });
 window.addEventListener('touchend', endPick);
@@ -126,11 +122,13 @@ function rgbToHex(r, g, b) {
     return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).toUpperCase();
 }
 
-// Render Palettes
+// Render Palettes (WITH INDIVIDUAL DELETE LOGIC)
 function updatePaletteDisplay() {
     paletteDisplayContainer.innerHTML = '';
-    palettes.forEach((palette) => {
+    
+    palettes.forEach((palette, paletteIndex) => {
         if (palette.colors.length === 0) return;
+        
         const groupDiv = document.createElement('div');
         groupDiv.classList.add('palette-group');
         
@@ -141,18 +139,27 @@ function updatePaletteDisplay() {
         const gridDiv = document.createElement('div');
         gridDiv.classList.add('palette-grid');
 
-        palette.colors.forEach((color) => {
+        palette.colors.forEach((color, colorIndex) => {
             const swatch = document.createElement('div');
-            swatch.classList.add('color-swatch');
+            swatch.classList.add('color-swatch', 'deletable-swatch'); // Added deletable class
             swatch.style.backgroundColor = color;
+            swatch.title = "Tap to delete";
+            
+            // Delete this specific color on click
+            swatch.addEventListener('click', () => {
+                palettes[paletteIndex].colors.splice(colorIndex, 1);
+                updatePaletteDisplay(); // Re-render the UI instantly
+            });
+            
             gridDiv.appendChild(swatch);
         });
+        
         groupDiv.appendChild(gridDiv);
         paletteDisplayContainer.appendChild(groupDiv);
     });
 }
 
-// Clear Pool
+// Clear Entire Pool
 clearPaletteBtn.addEventListener('click', () => {
     palettes = [];
     activePaletteIndex = -1;
@@ -258,10 +265,8 @@ let deferredPrompt;
 const installBtn = document.getElementById('installBtn');
 
 window.addEventListener('beforeinstallprompt', (e) => {
-    // Prevent default mini-infobar
     e.preventDefault();
     deferredPrompt = e;
-    // Update UI notify the user they can install the PWA
     installBtn.classList.remove('hidden');
 });
 
