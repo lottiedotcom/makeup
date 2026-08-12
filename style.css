@@ -1,213 +1,59 @@
-:root {
-    --bg-color: #f2f5ff;
-    --panel-bg: #e6ddf5;
-    --text-color: #4a3f5e;
-    --primary-btn: #b3a1d4;
-    --primary-btn-hover: #9c89c4;
-    --secondary-btn: #c4d4f5;
-    --secondary-btn-hover: #a8c1f0;
-}
-
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    margin: 0;
-    padding: 20px;
+/* --- Vibe Quiz Modal Styles --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(74, 63, 94, 0.6); /* Soft dark purple dim */
+    backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
-    overscroll-behavior-y: contain; 
+    align-items: center;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.3s ease;
 }
 
-.app-container {
-    max-width: 500px;
-    width: 100%;
+.modal-overlay.hidden {
+    display: none !important;
+    opacity: 0;
+}
+
+.quiz-panel {
+    width: 90%;
+    max-width: 400px;
+    box-sizing: border-box;
+    animation: popIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.quiz-options {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 12px;
+    margin-top: 20px;
 }
 
-.bubble-panel {
-    background-color: var(--panel-bg);
-    border-radius: 30px;
-    padding: 25px;
-    box-shadow: 0 8px 20px rgba(138, 120, 171, 0.15);
-    text-align: center;
-}
-
-h1, h2, h3 {
-    margin-top: 0;
-    color: #5d4e75;
-}
-
-/* Eyedropper Magnifier Styles */
-#magnifier-container {
-    position: fixed;
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    border: 4px solid white;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    pointer-events: none;
-    overflow: hidden;
-    z-index: 100;
-    display: none;
+.quiz-btn {
     background: white;
-}
-
-#magnifier {
-    width: 100%;
-    height: 100%;
-    image-rendering: pixelated; 
-}
-
-.crosshair {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 6px;
-    height: 6px;
-    background: transparent;
-    border: 2px solid red;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    pointer-events: none;
-}
-
-.canvas-container {
-    width: 100%;
-    max-height: 300px;
-    overflow: hidden;
-    border-radius: 20px;
-    margin: 15px 0;
-    background: #fff;
-    box-shadow: inset 0 4px 10px rgba(0,0,0,0.05);
-    touch-action: none; 
-}
-
-canvas#imageCanvas {
-    width: 100%;
-    height: auto;
-    cursor: crosshair;
-    touch-action: none; /* Forces the browser to handle pointer events cleanly */
-}
-
-.hidden-input {
-    display: none;
-}
-
-.file-upload-btn {
-    display: block;
-    box-sizing: border-box;
-    text-align: center;
-}
-
-/* Palette Groups Layout */
-.palette-group {
-    background: rgba(255, 255, 255, 0.5);
+    color: var(--text-color);
+    border: 2px solid var(--primary-btn);
     border-radius: 20px;
     padding: 15px;
-    margin-bottom: 15px;
-    text-align: left;
-}
-
-.palette-group h4 {
-    margin: 0 0 10px 0;
-    font-size: 16px;
-    color: #5d4e75;
-    text-align: center;
-}
-
-.palette-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-}
-
-.color-swatch {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    border: 2px solid white;
-}
-
-/* Delete Swatch Effects */
-.deletable-swatch {
-    cursor: pointer;
-    transition: transform 0.2s, border-color 0.2s;
-}
-
-.deletable-swatch:hover, .deletable-swatch:active {
-    transform: scale(0.85);
-    border-color: #ff8a8a; 
-}
-
-#challengeSwatches .color-swatch {
-    cursor: default;
-    transform: none;
-    border-color: white;
-}
-
-.bubble-btn, .bubble-select {
-    width: 100%;
-    padding: 15px;
-    border: none;
-    border-radius: 25px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: bold;
     cursor: pointer;
-    margin-top: 10px;
-    transition: transform 0.1s, background-color 0.2s;
-    color: #333;
+    transition: all 0.2s ease;
 }
 
-.bubble-btn:active {
-    transform: scale(0.97);
+.quiz-btn:hover, .quiz-btn:active {
+    background: var(--primary-btn);
+    color: white;
+    transform: scale(0.98);
 }
 
-.primary { background-color: var(--primary-btn); }
-.primary:hover { background-color: var(--primary-btn-hover); }
-
-.secondary { background-color: var(--secondary-btn); }
-.secondary:hover { background-color: var(--secondary-btn-hover); }
-
-.bubble-select {
-    background-color: white;
-    color: var(--text-color);
-    margin-bottom: 15px;
-    outline: none;
-}
-
-.result-box {
-    margin-top: 20px;
-    background: white;
-    padding: 20px;
-    border-radius: 20px;
-}
-
-.swatch-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 80px;
-    text-align: center;
-}
-
-.swatch-wrapper small {
-    margin-top: 5px;
-    font-size: 0.8em;
-    color: #666;
-    line-height: 1.2;
-}
-
-.hidden {
-    display: none !important;
-}
-
-.instruction {
-    font-size: 0.9em;
-    opacity: 0.8;
+@keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
