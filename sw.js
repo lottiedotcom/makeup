@@ -1,5 +1,5 @@
-// Version 3 forces a cache clear!
-const CACHE_NAME = 'makeup-cache-v3'; 
+// Bumped to v4 to clear the cache!
+const CACHE_NAME = 'makeup-cache-v4'; 
 
 const urlsToCache = [
   './',
@@ -7,7 +7,7 @@ const urlsToCache = [
   './style.css',
   './script.js', 
   './manifest.json',
-  './makeup.jpg'
+  './makeup.png' // Updated to png here!
 ];
 
 // Install Service Worker and Cache New Files
