@@ -44,10 +44,26 @@
         <section class="bubble-panel">
             <h2>3. Challenge Generator</h2>
             
-            <!-- Replaced the dropdown with action buttons -->
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button id="quickRollBtn" class="bubble-btn secondary" style="margin-top: 0;">🎲 Quick Roll</button>
-                <button id="startQuizBtn" class="bubble-btn primary" style="margin-top: 0;">✨ Take the Vibe Quiz</button>
+            <!-- Stacked Generator Options -->
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px;">
+                
+                <button id="quickRollBtn" class="bubble-btn secondary" style="margin: 0;">🎲 Quick Roll</button>
+                
+                <!-- The Manual Dropdown Toggle -->
+                <div style="display: flex; gap: 10px;">
+                    <select id="challengeMode" class="bubble-select" style="margin: 0; flex-grow: 1;">
+                        <option value="roulette">Palette Roulette</option>
+                        <option value="haloEye">The Halo Eye</option>
+                        <option value="innerCorner">Inner Corner Pop</option>
+                        <option value="oneAndDone">The One & Done</option>
+                        <option value="panProject">The Pan Project</option>
+                        <option value="colorClash">Color Theory Clash</option>
+                        <option value="placement">Placement Prompts</option>
+                    </select>
+                    <button id="manualRollBtn" class="bubble-btn primary" style="margin: 0; width: auto; padding: 0 25px;">Go</button>
+                </div>
+
+                <button id="startQuizBtn" class="bubble-btn primary" style="margin: 0;">✨ Take the Vibe Quiz</button>
             </div>
             
             <div id="challengeResult" class="result-box hidden">
