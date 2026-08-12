@@ -19,6 +19,7 @@
         <header class="bubble-panel">
             <h1>makeup</h1>
             <p>Your digital palette & challenge generator</p>
+            <button id="installBtn" class="bubble-btn primary hidden" style="margin-top: 10px;">📲 Install App</button>
         </header>
 
         <section class="bubble-panel">
@@ -31,7 +32,7 @@
             <div class="canvas-container hidden" id="canvasWrapper">
                 <canvas id="imageCanvas"></canvas>
             </div>
-            <p class="instruction" id="tapInstruction" style="display:none;">Hover to zoom, tap to extract colors into your active palette!</p>
+            <p class="instruction" id="tapInstruction" style="display:none;">Press, drag, and release to extract colors!</p>
         </section>
 
         <section class="bubble-panel">
@@ -44,6 +45,9 @@
             <h2>3. Challenge Generator</h2>
             <select id="challengeMode" class="bubble-select">
                 <option value="roulette">Palette Roulette</option>
+                <option value="haloEye">The Halo Eye</option>
+                <option value="innerCorner">Inner Corner Pop</option>
+                <option value="oneAndDone">The One & Done</option>
                 <option value="panProject">The Pan Project</option>
                 <option value="colorClash">Color Theory Clash</option>
                 <option value="placement">Placement Prompts</option>
