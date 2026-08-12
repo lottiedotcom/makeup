@@ -16,7 +16,6 @@ body {
     padding: 20px;
     display: flex;
     justify-content: center;
-    /* Prevents pull-to-refresh on mobile while dragging colors */
     overscroll-behavior-y: contain; 
 }
 
@@ -83,7 +82,6 @@ h1, h2, h3 {
     margin: 15px 0;
     background: #fff;
     box-shadow: inset 0 4px 10px rgba(0,0,0,0.05);
-    /* Essential for touch devices */
     touch-action: none; 
 }
 
@@ -91,6 +89,7 @@ canvas#imageCanvas {
     width: 100%;
     height: auto;
     cursor: crosshair;
+    touch-action: none; /* Forces the browser to handle pointer events cleanly */
 }
 
 .hidden-input {
@@ -142,10 +141,9 @@ canvas#imageCanvas {
 
 .deletable-swatch:hover, .deletable-swatch:active {
     transform: scale(0.85);
-    border-color: #ff8a8a; /* Soft red border to indicate delete */
+    border-color: #ff8a8a; 
 }
 
-/* Prevents challenge swatches from having the delete effect */
 #challengeSwatches .color-swatch {
     cursor: default;
     transform: none;
@@ -212,4 +210,3 @@ canvas#imageCanvas {
     font-size: 0.9em;
     opacity: 0.8;
 }
-
