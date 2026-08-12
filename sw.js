@@ -1,4 +1,4 @@
-const CACHE_NAME = 'makeup-cache-v7'; 
+const CACHE_NAME = 'makeup-cache-v8'; 
 
 const urlsToCache = [
   './',
