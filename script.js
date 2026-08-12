@@ -1,16 +1,15 @@
 const imageLoader = document.getElementById('imageLoader');
 const canvas = document.getElementById('imageCanvas');
 const ctx = canvas.getContext('2d');
-const wrapper = document.getElementById('canvasWrapper');
-const magnifier = document.getElementById('magnifier');
-const magCtx = magnifier.getContext('2d');
+const canvasWrapper = document.getElementById('canvasWrapper');
+const tapInstruction = document.getElementById('tapInstruction');
 
-const paletteNameInput = document.getElementById('paletteName');
-const currentExtractionGrid = document.getElementById('currentExtractionGrid');
-const savePaletteBtn = document.getElementById('savePaletteBtn');
-const libraryDisplay = document.getElementById('libraryDisplay');
-const clearLibraryBtn = document.getElementById('clearLibraryBtn');
+const magContainer = document.getElementById('magnifier-container');
+const magCanvas = document.getElementById('magnifier');
+const magCtx = magCanvas.getContext('2d');
 
+const paletteDisplay = document.getElementById('paletteDisplay');
+const clearPaletteBtn = document.getElementById('clearPaletteBtn');
 const generateBtn = document.getElementById('generateBtn');
 const challengeMode = document.getElementById('challengeMode');
 const challengeResult = document.getElementById('challengeResult');
@@ -18,10 +17,9 @@ const challengeTitle = document.getElementById('challengeTitle');
 const challengeText = document.getElementById('challengeText');
 const challengeSwatches = document.getElementById('challengeSwatches');
 
-let currentExtraction = []; // Colors being picked right now
-let allPalettes = []; // Array of saved palette objects
+let savedColors = [];
 
-// Handle Image Upload
+// Handle Image Upload (Allows multiple uploads without clearing colors)
 imageLoader.addEventListener('change', (e) => {
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -30,184 +28,108 @@ imageLoader.addEventListener('change', (e) => {
             canvas.width = img.width;
             canvas.height = img.height;
             ctx.drawImage(img, 0, 0);
+            
+            // Show canvas and instructions
+            canvasWrapper.classList.remove('hidden');
+            tapInstruction.style.display = 'block';
+            
+            // Change button text after first upload
+            document.querySelector('.file-upload-btn').innerText = "Upload Another Palette";
         }
         img.src = event.target.result;
     }
-    if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+    reader.readAsDataURL(e.target.files[0]);
 });
 
-// --- EYEDROPPER & MAGNIFIER LOGIC ---
+// Eyedropper Zoom Logic on Mouse Move
+canvas.addEventListener('mousemove', (e) => {
+    // Show and position the magnifier slightly offset from the cursor
+    magContainer.style.display = 'block';
+    magContainer.style.left = (e.clientX + 15) + 'px';
+    magContainer.style.top = (e.clientY - 40) + 'px';
 
-let isDragging = false;
-let lastPickedColor = null;
-
-function getCoordinates(e) {
     const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    // Coordinates for CSS positioning of magnifier
-    const cssX = clientX - rect.left;
-    const cssY = clientY - rect.top;
-
-    // Coordinates mapped to actual canvas pixels
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const canvasX = cssX * scaleX;
-    const canvasY = cssY * scaleY;
-
-    return { cssX, cssY, canvasX, canvasY };
-}
-
-function updateMagnifier(e) {
-    const { cssX, cssY, canvasX, canvasY } = getCoordinates(e);
-
-    // Position the magnifier slightly above the finger/cursor
-    magnifier.style.left = `${cssX}px`;
-    magnifier.style.top = `${cssY - 50}px`; 
-
-    // Clear magnifier and draw zoomed portion
-    magCtx.clearRect(0, 0, magnifier.width, magnifier.height);
     
-    // We sample a 20x20 pixel area and draw it at 80x80 (4x zoom)
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
+    // Draw a zoomed-in portion of the main canvas onto the magnifier canvas
+    magCtx.imageSmoothingEnabled = false; // Keep it pixelated for precise picking
+    magCtx.clearRect(0, 0, magCanvas.width, magCanvas.height);
+    
+    // Zoom factor: grabbing a 20x20 square around the cursor and stretching it to 80x80
     magCtx.drawImage(
         canvas, 
-        canvasX - 10, canvasY - 10, 20, 20, // Source area
-        0, 0, magnifier.width, magnifier.height // Destination area
+        x - 10, y - 10, 20, 20, 
+        0, 0, magCanvas.width, magCanvas.height
     );
+});
 
-    // Draw a small crosshair in the center of the magnifier
-    magCtx.strokeStyle = 'white';
-    magCtx.beginPath();
-    magCtx.moveTo(40, 35); magCtx.lineTo(40, 45);
-    magCtx.moveTo(35, 40); magCtx.lineTo(45, 40);
-    magCtx.stroke();
+// Hide magnifier when leaving canvas
+canvas.addEventListener('mouseleave', () => {
+    magContainer.style.display = 'none';
+});
+// Hide magnifier when scrolling so it doesn't float weirdly
+window.addEventListener('scroll', () => {
+    magContainer.style.display = 'none';
+});
 
-    // Get exact pixel color
-    const pixel = ctx.getImageData(canvasX, canvasY, 1, 1).data;
-    lastPickedColor = rgbToHex(pixel[0], pixel[1], pixel[2]);
+// Tap/Click to Pick Color (No limits)
+canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
     
-    // Give the magnifier a colored border matching the pixel
-    magnifier.style.borderColor = lastPickedColor;
-}
-
-function startPicking(e) {
-    isDragging = true;
-    magnifier.style.display = 'block';
-    updateMagnifier(e);
-}
-
-function stopPicking(e) {
-    if (!isDragging) return;
-    isDragging = false;
-    magnifier.style.display = 'none';
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
     
-    if (lastPickedColor) {
-        currentExtraction.push(lastPickedColor);
-        renderCurrentExtraction();
-    }
-}
+    const pixel = ctx.getImageData(x, y, 1, 1).data;
+    const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
+    
+    savedColors.push(hex);
+    updatePaletteDisplay();
+});
 
-// Mouse Events
-canvas.addEventListener('mousedown', startPicking);
-canvas.addEventListener('mousemove', (e) => { if (isDragging) updateMagnifier(e); });
-window.addEventListener('mouseup', stopPicking);
-
-// Touch Events (Mobile)
-canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startPicking(e); }, {passive: false});
-canvas.addEventListener('touchmove', (e) => { e.preventDefault(); updateMagnifier(e); }, {passive: false});
-canvas.addEventListener('touchend', stopPicking);
-
-
-// --- PALETTE MANAGEMENT ---
-
+// Convert RGB to Hex
 function rgbToHex(r, g, b) {
     return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).toUpperCase();
 }
 
-function renderCurrentExtraction() {
-    currentExtractionGrid.innerHTML = '';
-    currentExtraction.forEach(color => {
+// Render Palette Swatches
+function updatePaletteDisplay() {
+    paletteDisplay.innerHTML = '';
+    savedColors.forEach((color, index) => {
         const swatch = document.createElement('div');
         swatch.classList.add('color-swatch');
         swatch.style.backgroundColor = color;
-        currentExtractionGrid.appendChild(swatch);
+        swatch.title = `Color ${index + 1}`;
+        paletteDisplay.appendChild(swatch);
     });
 }
 
-savePaletteBtn.addEventListener('click', () => {
-    if (currentExtraction.length === 0) {
-        alert("Pick some colors first!");
-        return;
-    }
-    
-    const pName = paletteNameInput.value.trim() || `Palette ${allPalettes.length + 1}`;
-    
-    allPalettes.push({
-        name: pName,
-        colors: [...currentExtraction]
-    });
-    
-    // Reset for next palette
-    currentExtraction = [];
-    paletteNameInput.value = '';
-    renderCurrentExtraction();
-    renderLibrary();
+// Clear Entire Pool
+clearPaletteBtn.addEventListener('click', () => {
+    savedColors = [];
+    updatePaletteDisplay();
+    challengeResult.classList.add('hidden');
 });
 
-function renderLibrary() {
-    libraryDisplay.innerHTML = '';
-    allPalettes.forEach(palette => {
-        const group = document.createElement('div');
-        group.classList.add('saved-palette-group');
-        
-        const title = document.createElement('h4');
-        title.innerText = palette.name;
-        group.appendChild(title);
-        
-        const grid = document.createElement('div');
-        grid.classList.add('palette-grid');
-        
-        palette.colors.forEach(color => {
-            const swatch = document.createElement('div');
-            swatch.classList.add('color-swatch');
-            swatch.style.backgroundColor = color;
-            grid.appendChild(swatch);
-        });
-        
-        group.appendChild(grid);
-        libraryDisplay.appendChild(group);
-    });
-}
-
-clearLibraryBtn.addEventListener('click', () => {
-    if(confirm("Delete all saved palettes?")) {
-        allPalettes = [];
-        renderLibrary();
-    }
-});
-
-
-// --- CHALLENGE GENERATOR ---
-
+// Challenge Generator Logic
 generateBtn.addEventListener('click', () => {
-    // Flatten all colors from all palettes into one big array
-    let allSavedColors = [];
-    allPalettes.forEach(p => {
-        allSavedColors = allSavedColors.concat(p.colors);
-    });
-
-    if (allSavedColors.length < 3) {
-        alert("Save at least 3 colors to your library first!");
+    if (savedColors.length < 3) {
+        alert("Please add at least 3 colors to your pool first!");
         return;
     }
 
     const mode = challengeMode.value;
     challengeResult.classList.remove('hidden');
-    challengeSwatches.innerHTML = '';
+    challengeSwatches.innerHTML = ''; 
 
-    const getRandomColors = (num, sourceArray) => {
-        const shuffled = [...sourceArray].sort(() => 0.5 - Math.random());
+    // Helper function to get N random colors from the massive pool
+    const getRandomColors = (num) => {
+        const shuffled = [...savedColors].sort(() => 0.5 - Math.random());
         return shuffled.slice(0, num);
     };
 
@@ -216,19 +138,25 @@ generateBtn.addEventListener('click', () => {
     switch (mode) {
         case 'roulette':
             challengeTitle.innerText = "Palette Roulette";
-            challengeText.innerText = "Here is a randomized 4-pan look pulled from across your entire collection!";
-            selectedColors = getRandomColors(4, allSavedColors);
+            challengeText.innerText = "Here is your randomized 4-pan look!";
+            selectedColors = getRandomColors(4);
+            break;
+            
+        case 'panProject':
+            challengeTitle.innerText = "The Pan Project";
+            challengeText.innerText = "Time to hit pan! Create a full look focusing entirely on these least-used shades.";
+            selectedColors = getRandomColors(3);
             break;
             
         case 'colorClash':
             challengeTitle.innerText = "Color Theory Clash";
             challengeText.innerText = "Make it work! Create a cohesive look using these contrasting shades.";
-            selectedColors = getRandomColors(2, allSavedColors);
+            selectedColors = getRandomColors(2);
             break;
             
         case 'placement':
             challengeTitle.innerText = "Placement Prompts";
-            selectedColors = getRandomColors(3, allSavedColors);
+            selectedColors = getRandomColors(3);
             challengeText.innerHTML = `
                 Use <b>Color 1</b> in the crease.<br>
                 Pack <b>Color 2</b> all over the lid.<br>
@@ -237,14 +165,15 @@ generateBtn.addEventListener('click', () => {
             break;
             
         case 'vibeCheck':
-            const vibes = ["Grunge", "Ethereal", "Everyday Soft", "Night Out", "Sunset", "Vampy"];
+            const vibes = ["Grunge", "Ethereal", "Everyday Soft", "Night Out"];
             const randomVibe = vibes[Math.floor(Math.random() * vibes.length)];
             challengeTitle.innerText = `Vibe Check: ${randomVibe}`;
             challengeText.innerText = `Create a ${randomVibe} look using these random selections as your anchor.`;
-            selectedColors = getRandomColors(4, allSavedColors);
+            selectedColors = getRandomColors(4);
             break;
     }
 
+    // Display the generated colors
     selectedColors.forEach((color, index) => {
         const swatchWrap = document.createElement('div');
         swatchWrap.style.textAlign = 'center';
@@ -261,4 +190,11 @@ generateBtn.addEventListener('click', () => {
         challengeSwatches.appendChild(swatchWrap);
     });
 });
+
+// PWA Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js');
+    });
+}
 
