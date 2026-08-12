@@ -8,7 +8,7 @@ const magContainer = document.getElementById('magnifier-container');
 const magCanvas = document.getElementById('magnifier');
 const magCtx = magCanvas.getContext('2d');
 
-const paletteDisplay = document.getElementById('paletteDisplay');
+const paletteDisplayContainer = document.getElementById('paletteDisplayContainer');
 const clearPaletteBtn = document.getElementById('clearPaletteBtn');
 const generateBtn = document.getElementById('generateBtn');
 const challengeMode = document.getElementById('challengeMode');
@@ -17,9 +17,11 @@ const challengeTitle = document.getElementById('challengeTitle');
 const challengeText = document.getElementById('challengeText');
 const challengeSwatches = document.getElementById('challengeSwatches');
 
-let savedColors = [];
+// Array of palette objects: { name: 'Palette 1', colors: ['#hex', '#hex'] }
+let palettes = [];
+let activePaletteIndex = -1;
 
-// Handle Image Upload (Allows multiple uploads without clearing colors)
+// Handle Image Upload
 imageLoader.addEventListener('change', (e) => {
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -29,21 +31,37 @@ imageLoader.addEventListener('change', (e) => {
             canvas.height = img.height;
             ctx.drawImage(img, 0, 0);
             
-            // Show canvas and instructions
+            // Ask user for a palette name
+            const defaultName = "Palette " + (palettes.length + 1);
+            let paletteName = prompt("Name this palette (e.g., 'Neon Nights'):", defaultName);
+            if (!paletteName) paletteName = defaultName;
+
+            // Create new palette object and set as active
+            palettes.push({
+                name: paletteName,
+                colors: []
+            });
+            activePaletteIndex = palettes.length - 1;
+
+            // Show UI elements
             canvasWrapper.classList.remove('hidden');
             tapInstruction.style.display = 'block';
-            
-            // Change button text after first upload
+            clearPaletteBtn.classList.remove('hidden');
             document.querySelector('.file-upload-btn').innerText = "Upload Another Palette";
+            
+            updatePaletteDisplay();
         }
         img.src = event.target.result;
     }
-    reader.readAsDataURL(e.target.files[0]);
+    // Reset value so uploading the same file twice in a row still triggers 'change'
+    if (e.target.files.length > 0) {
+        reader.readAsDataURL(e.target.files[0]);
+    }
+    e.target.value = ''; 
 });
 
-// Eyedropper Zoom Logic on Mouse Move
+// Eyedropper Zoom Logic
 canvas.addEventListener('mousemove', (e) => {
-    // Show and position the magnifier slightly offset from the cursor
     magContainer.style.display = 'block';
     magContainer.style.left = (e.clientX + 15) + 'px';
     magContainer.style.top = (e.clientY - 40) + 'px';
@@ -55,11 +73,8 @@ canvas.addEventListener('mousemove', (e) => {
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
 
-    // Draw a zoomed-in portion of the main canvas onto the magnifier canvas
-    magCtx.imageSmoothingEnabled = false; // Keep it pixelated for precise picking
+    magCtx.imageSmoothingEnabled = false; 
     magCtx.clearRect(0, 0, magCanvas.width, magCanvas.height);
-    
-    // Zoom factor: grabbing a 20x20 square around the cursor and stretching it to 80x80
     magCtx.drawImage(
         canvas, 
         x - 10, y - 10, 20, 20, 
@@ -67,17 +82,13 @@ canvas.addEventListener('mousemove', (e) => {
     );
 });
 
-// Hide magnifier when leaving canvas
-canvas.addEventListener('mouseleave', () => {
-    magContainer.style.display = 'none';
-});
-// Hide magnifier when scrolling so it doesn't float weirdly
-window.addEventListener('scroll', () => {
-    magContainer.style.display = 'none';
-});
+canvas.addEventListener('mouseleave', () => magContainer.style.display = 'none');
+window.addEventListener('scroll', () => magContainer.style.display = 'none');
 
-// Tap/Click to Pick Color (No limits)
+// Tap to Pick Color
 canvas.addEventListener('click', (e) => {
+    if (activePaletteIndex === -1) return;
+
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
@@ -88,38 +99,68 @@ canvas.addEventListener('click', (e) => {
     const pixel = ctx.getImageData(x, y, 1, 1).data;
     const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
     
-    savedColors.push(hex);
+    palettes[activePaletteIndex].colors.push(hex);
     updatePaletteDisplay();
 });
 
-// Convert RGB to Hex
 function rgbToHex(r, g, b) {
     return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).toUpperCase();
 }
 
-// Render Palette Swatches
+// Render All Palettes in the Pool
 function updatePaletteDisplay() {
-    paletteDisplay.innerHTML = '';
-    savedColors.forEach((color, index) => {
-        const swatch = document.createElement('div');
-        swatch.classList.add('color-swatch');
-        swatch.style.backgroundColor = color;
-        swatch.title = `Color ${index + 1}`;
-        paletteDisplay.appendChild(swatch);
+    paletteDisplayContainer.innerHTML = '';
+    
+    palettes.forEach((palette) => {
+        // Create container for this palette
+        const groupDiv = document.createElement('div');
+        groupDiv.classList.add('palette-group');
+        
+        // Palette Title
+        const title = document.createElement('h4');
+        title.innerText = palette.name;
+        groupDiv.appendChild(title);
+
+        // Grid for swatches
+        const gridDiv = document.createElement('div');
+        gridDiv.classList.add('palette-grid');
+
+        palette.colors.forEach((color) => {
+            const swatch = document.createElement('div');
+            swatch.classList.add('color-swatch');
+            swatch.style.backgroundColor = color;
+            gridDiv.appendChild(swatch);
+        });
+
+        groupDiv.appendChild(gridDiv);
+        paletteDisplayContainer.appendChild(groupDiv);
     });
 }
 
-// Clear Entire Pool
+// Clear Everything
 clearPaletteBtn.addEventListener('click', () => {
-    savedColors = [];
+    palettes = [];
+    activePaletteIndex = -1;
     updatePaletteDisplay();
     challengeResult.classList.add('hidden');
+    canvasWrapper.classList.add('hidden');
+    tapInstruction.style.display = 'none';
+    clearPaletteBtn.classList.add('hidden');
+    document.querySelector('.file-upload-btn').innerText = "Upload a Palette";
 });
 
-// Challenge Generator Logic
+// Challenge Generator
 generateBtn.addEventListener('click', () => {
-    if (savedColors.length < 3) {
-        alert("Please add at least 3 colors to your pool first!");
+    // Flatten all colors into an array of objects: { color: '#hex', paletteName: 'Name' }
+    let allColors = [];
+    palettes.forEach(p => {
+        p.colors.forEach(c => {
+            allColors.push({ color: c, paletteName: p.name });
+        });
+    });
+
+    if (allColors.length < 3) {
+        alert("Please extract at least 3 colors into your digital pool first!");
         return;
     }
 
@@ -127,10 +168,11 @@ generateBtn.addEventListener('click', () => {
     challengeResult.classList.remove('hidden');
     challengeSwatches.innerHTML = ''; 
 
-    // Helper function to get N random colors from the massive pool
+    // Helper to get random unique colors
     const getRandomColors = (num) => {
-        const shuffled = [...savedColors].sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, num);
+        const shuffled = [...allColors].sort(() => 0.5 - Math.random());
+        // Ensure we only pick as many colors as exist in the pool
+        return shuffled.slice(0, Math.min(num, allColors.length));
     };
 
     let selectedColors = [];
@@ -173,17 +215,21 @@ generateBtn.addEventListener('click', () => {
             break;
     }
 
-    // Display the generated colors
-    selectedColors.forEach((color, index) => {
+    // Display generated colors with their parent palette name
+    selectedColors.forEach((colorObj, index) => {
         const swatchWrap = document.createElement('div');
-        swatchWrap.style.textAlign = 'center';
+        swatchWrap.classList.add('swatch-wrapper');
         
         const swatch = document.createElement('div');
         swatch.classList.add('color-swatch');
-        swatch.style.backgroundColor = color;
+        swatch.style.backgroundColor = colorObj.color;
         
         const label = document.createElement('small');
-        label.innerText = mode === 'placement' ? `Color ${index + 1}` : '';
+        if (mode === 'placement') {
+            label.innerHTML = `<b>Color ${index + 1}</b><br>${colorObj.paletteName}`;
+        } else {
+            label.innerText = colorObj.paletteName;
+        }
         
         swatchWrap.appendChild(swatch);
         swatchWrap.appendChild(label);
@@ -197,4 +243,3 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js');
     });
 }
-
