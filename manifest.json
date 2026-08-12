@@ -2,20 +2,21 @@
   "name": "makeup",
   "short_name": "makeup",
   "description": "Your digital palette and challenge generator.",
-  "start_url": "./index.html",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#f2f5ff",
   "theme_color": "#d8cce6",
   "icons": [
     {
-      "src": "makeup.jpg",
+      "src": "makeup.png",
       "sizes": "192x192",
-      "type": "image/jpeg"
+      "type": "image/png"
     },
     {
-      "src": "makeup.jpg",
+      "src": "makeup.png",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
