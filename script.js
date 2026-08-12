@@ -118,7 +118,7 @@ function getHSL(hex) {
     return { h: h, s: +(s * 100).toFixed(1), l: +(l * 100).toFixed(1) };
 }
 
-// --- RENDER PALETTES (WITH NUMBERS) ---
+// --- RENDER PALETTES (WITH NUMBERS INSIDE CIRCLES) ---
 function updatePaletteDisplay() {
     paletteDisplayContainer.innerHTML = '';
     palettes.forEach((palette, paletteIndex) => {
@@ -128,29 +128,30 @@ function updatePaletteDisplay() {
         const title = document.createElement('h4');
         title.innerText = palette.name;
         groupDiv.appendChild(title);
+        
+        // This restores the tight layout!
         const gridDiv = document.createElement('div');
         gridDiv.classList.add('palette-grid');
 
         palette.colors.forEach((color, colorIndex) => {
-            // Use swatch-wrapper so we can display the number underneath
-            const swatchWrap = document.createElement('div');
-            swatchWrap.classList.add('swatch-wrapper');
-
             const swatch = document.createElement('div');
             swatch.classList.add('color-swatch', 'deletable-swatch'); 
             swatch.style.backgroundColor = color;
             swatch.title = "Tap to delete";
+            
+            // Insert number directly into the circle
+            swatch.innerText = colorIndex + 1;
+            
+            // Ensure contrast: Light colors get dark text, dark colors get white text
+            const hsl = getHSL(color);
+            swatch.style.color = hsl.l > 55 ? '#333' : '#fff';
+            
             swatch.addEventListener('click', () => {
                 palettes[paletteIndex].colors.splice(colorIndex, 1);
                 updatePaletteDisplay(); 
             });
 
-            const label = document.createElement('small');
-            label.innerText = `#${colorIndex + 1}`; // Display pan number
-
-            swatchWrap.appendChild(swatch);
-            swatchWrap.appendChild(label);
-            gridDiv.appendChild(swatchWrap);
+            gridDiv.appendChild(swatch);
         });
         groupDiv.appendChild(gridDiv);
         paletteDisplayContainer.appendChild(groupDiv);
@@ -249,7 +250,6 @@ function handleOptionClick(option) {
 // --- GENERATOR LOGIC ---
 function getFlatColors() {
     let allColors = [];
-    // Now captures the exact original index (color number) of the pan
     palettes.forEach(p => p.colors.forEach((c, index) => allColors.push({ color: c, paletteName: p.name, originalNumber: index + 1 })));
     return allColors;
 }
@@ -291,7 +291,6 @@ function generateChallenge(mode, vibe, finishText) {
     challengeSwatches.innerHTML = ''; 
     let selectedColors = [];
 
-    // Text changed from "Color 1" to "Shade 1" to avoid confusion with physical Pan #1
     switch (mode) {
         case 'roulette':
             challengeTitle.innerText = "Palette Roulette";
@@ -340,9 +339,16 @@ function generateChallenge(mode, vibe, finishText) {
         swatch.classList.add('color-swatch');
         swatch.style.backgroundColor = colorObj.color;
         
+        // Put the original pan number inside the generated swatch!
+        swatch.innerText = colorObj.originalNumber;
+        
+        // Ensure contrast for the generated swatches too
+        const hsl = getHSL(colorObj.color);
+        swatch.style.color = hsl.l > 55 ? '#333' : '#fff';
+        
         const label = document.createElement('small');
-        // Now outputs "Palette Name (#Number)"
-        const sourceText = `${colorObj.paletteName} (#${colorObj.originalNumber})`;
+        // The text underneath is now just the Palette Name
+        const sourceText = colorObj.paletteName;
 
         if (mode === 'placement' || mode === 'haloEye' || mode === 'innerCorner') {
             label.innerHTML = `<b>Shade ${index + 1}</b><br>${sourceText}`;
