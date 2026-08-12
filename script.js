@@ -122,7 +122,7 @@ function rgbToHex(r, g, b) {
     return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).toUpperCase();
 }
 
-// Render Palettes (WITH INDIVIDUAL DELETE LOGIC)
+// Render Palettes & Individual Delete
 function updatePaletteDisplay() {
     paletteDisplayContainer.innerHTML = '';
     
@@ -141,14 +141,13 @@ function updatePaletteDisplay() {
 
         palette.colors.forEach((color, colorIndex) => {
             const swatch = document.createElement('div');
-            swatch.classList.add('color-swatch', 'deletable-swatch'); // Added deletable class
+            swatch.classList.add('color-swatch', 'deletable-swatch'); 
             swatch.style.backgroundColor = color;
             swatch.title = "Tap to delete";
             
-            // Delete this specific color on click
             swatch.addEventListener('click', () => {
                 palettes[paletteIndex].colors.splice(colorIndex, 1);
-                updatePaletteDisplay(); // Re-render the UI instantly
+                updatePaletteDisplay(); 
             });
             
             gridDiv.appendChild(swatch);
